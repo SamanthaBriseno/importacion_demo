@@ -1,5 +1,5 @@
 services:
-  postgres:
+  importacion-postgres:
     image: postgres:15-alpine
     container_name: importacion-postgres
     restart: unless-stopped
@@ -20,7 +20,7 @@ services:
     container_name: importacion-app
     restart: unless-stopped
     environment:
-      DB_HOST: postgres
+      DB_HOST: importacion-postgres
       DB_PORT: 5432
       DB_USER: postgres
       DB_PASSWORD: postgres
@@ -32,7 +32,7 @@ services:
     volumes:
       - uploads_data:/app/uploads
     depends_on:
-      - postgres
+      - importacion-postgres
     networks:
       - importacion
 
