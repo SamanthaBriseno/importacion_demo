@@ -136,7 +136,7 @@ app.post('/api/importacion/upload', upload.single('documento'), async (req, res)
     console.log('📤 Enviando a n8n...');
 
     try {
-      const respuesta = await fetch('http://localhost:5678/webhook-test/importacion-test', {
+      const respuesta = await fetch('http://localhost:5678/webhook/importacion-test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(datosN8N)
