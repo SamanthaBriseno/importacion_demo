@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seguimiento — Importación</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; }
+    nav {
+      background: #0a0c12; border-bottom: 1px solid #1e2535;
+      padding: 0 2rem; display: flex; align-items: center;
+      justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100;
+    }
+    .nav-brand { color: #e2e8f0; font-weight: 700; font-size: 1rem; text-decoration: none; }
+    .nav-links { display: flex; gap: 0.5rem; }
+    .nav-links a {
+      color: #94a3b8; text-decoration: none; padding: 0.4rem 0.9rem;
+      border-radius: 6px; font-size: 0.875rem; font-weight: 500; transition: background 0.2s, color 0.2s;
+    }
+    .nav-links a:hover { background: #1e2535; color: #e2e8f0; }
+    .nav-links a.active { background: #4f46e5; color: #fff; }
+
+    .page { padding: 2rem; }
+    .container {
+      max-width: 600px; margin: 0 auto; background: #161b27;
+      border: 1px solid #1e2535; border-radius: 14px; padding: 2rem;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+    h1 { font-size: 1.5rem; margin-bottom: 1.5rem; color: #f1f5f9; }
+    input {
+      width: 100%; padding: 0.75rem 0.9rem; background: #0f1117;
+      border: 1px solid #2a3347; border-radius: 8px; font-size: 1rem;
+      color: #e2e8f0; margin-bottom: 1rem; transition: border-color 0.2s;
+    }
+    input::placeholder { color: #475569; }
+    input:focus { outline: none; border-color: #4f46e5; }
+    button {
+      width: 100%; padding: 0.85rem; background: #4f46e5; color: white;
+      border: none; border-radius: 8px; font-size: 1rem; font-weight: 600;
+      cursor: pointer; transition: background 0.2s;
+    }
+    button:hover { background: #4338ca; }
+
+    .result {
+      margin-top: 1.5rem; padding: 1.25rem; border-radius: 10px;
+      background: #0f1117; border: 1px solid #1e2535; display: none;
+    }
+    .result.visible { display: block; }
+    .result-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #1e2535; font-size: 0.9rem; }
+    .result-row:last-child { border-bottom: none; }
+    .result-label { color: #64748b; font-weight: 500; }
+    .result-value { color: #e2e8f0; font-weight: 600; text-align: right; }
+    .result-folio { font-family: monospace; color: #818cf8; font-size: 0.9rem; }
+
+    .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.8rem; font-weight: 700; }
+    .badge.aprobado       { background: #052e16; color: #4ade80; }
+    .badge.rechazado      { background: #2d0a0a; color: #f87171; }
+    .badge.revision_manual{ background: #2d1f00; color: #fbbf24; }
+    .badge.recibido, .badge.procesando { background: #0c1a2e; color: #60a5fa; }
+
+    .error-msg { color: #f87171; font-size: 0.9rem; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a class="nav-brand" href="/index.html">📦 Portal Importación</a>
+    <div class="nav-links">
+      <a href="/index.html">📋 Formulario</a>
+      <a href="/dashboard.html">📊 Dashboard</a>
+      <a href="/recomendaciones.html">💡 Recomendaciones</a>
+      <a href="/seguimiento.html" class="active">🔍 Seguimiento</a>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <h1>🔍 Seguimiento de Importación</h1>
+      <input type="text" id="folioInput" placeholder="Ingresa tu folio (ej: IMP-...)">
+      <button onclick="consultar()">Consultar</button>
+      <div id="errorMsg"></div>
+      <div class="result" id="result"></div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const folioInicial = params.get('folio');
+    if (folioInicial) {
+      document.getElementById('folioInput').value = folioInicial;
+      consultar();
+    }
+
+    async function consultar() {
+      const folio = document.getElementById('folioInput').value.trim();
+      const resultDiv = document.getElementById('result');
+      const errorMsg = document.getElementById('errorMsg');
+      errorMsg.textContent = '';
+      resultDiv.className = 'result';
+
+      if (!folio) { errorMsg.innerHTML = '<p class="error-msg">Por favor ingresa un folio.</p>'; return; }
+
+      try {
+        const res = await fetch('/api/importacion/status/' + folio);
+        const data = await res.json();
+
+        if (!res.ok) { errorMsg.innerHTML = '<p class="error-msg">❌ ' + data.error + '</p>'; return; }
+
+        resultDiv.className = 'result visible';
+        resultDiv.innerHTML =
+          '<div class="result-row"><span class="result-label">Folio</span><span class="result-value result-folio">' + data.folio + '</span></div>' +
+          '<div class="result-row"><span class="result-label">Estado</span><span class="result-value"><span class="badge ' + data.status + '">' + data.status + '</span></span></div>' +
+          '<div class="result-row"><span class="result-label">Resultado</span><span class="result-value">' + (data.resultado || 'En proceso') + '</span></div>' +
+          (data.motivo_rechazo ? '<div class="result-row"><span class="result-label">Motivo</span><span class="result-value" style="color:#f87171">' + data.motivo_rechazo + '</span></div>' : '') +
+          '<div class="result-row"><span class="result-label">Monto</span><span class="result-value">$' + Number(data.monto_facturado || 0).toLocaleString('es-MX') + '</span></div>';
+      } catch (error) {
+        errorMsg.innerHTML = '<p class="error-msg">❌ Error: ' + error.message + '</p>';
+      }
+    }
+  </script>
+</body>
+</html>

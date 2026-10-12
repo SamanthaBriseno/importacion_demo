@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Importación — Subir Documentación</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; }
+    nav {
+      background: #0a0c12; border-bottom: 1px solid #1e2535;
+      padding: 0 2rem; display: flex; align-items: center;
+      justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100;
+    }
+    .nav-brand { color: #e2e8f0; font-weight: 700; font-size: 1rem; text-decoration: none; }
+    .nav-links { display: flex; gap: 0.5rem; }
+    .nav-links a {
+      color: #94a3b8; text-decoration: none; padding: 0.4rem 0.9rem;
+      border-radius: 6px; font-size: 0.875rem; font-weight: 500; transition: background 0.2s, color 0.2s;
+    }
+    .nav-links a:hover { background: #1e2535; color: #e2e8f0; }
+    .nav-links a.active { background: #4f46e5; color: #fff; }
+
+    .page { padding: 2rem; }
+    .container {
+      max-width: 620px; margin: 0 auto; background: #161b27;
+      border: 1px solid #1e2535; border-radius: 14px; padding: 2rem;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+    h1 { font-size: 1.5rem; margin-bottom: 0.4rem; color: #f1f5f9; }
+    .subtitle { color: #64748b; margin-bottom: 1.75rem; font-size: 0.875rem; }
+
+    .requisitos {
+      background: #0f1117; border: 1px solid #1e2535; border-radius: 10px;
+      padding: 1.25rem; margin-bottom: 1.75rem;
+    }
+    .requisitos-title {
+      font-size: 0.78rem; font-weight: 700; color: #64748b;
+      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.9rem;
+    }
+    .req-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    .req-item {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.85rem; color: #94a3b8; padding: 0.4rem 0.6rem;
+      background: #161b27; border-radius: 6px; border: 1px solid #1e2535;
+    }
+    .req-item span { font-size: 1rem; }
+
+    .form-group { margin-bottom: 1.1rem; }
+    label { display: block; font-weight: 600; margin-bottom: 0.35rem; font-size: 0.85rem; color: #cbd5e1; }
+    .file-drop {
+      border: 2px dashed #2a3347; border-radius: 10px; padding: 2.5rem 1.5rem;
+      text-align: center; cursor: pointer; color: #64748b; font-size: 0.9rem;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .file-drop:hover { border-color: #4f46e5; background: #0d1020; color: #a5b4fc; }
+    .file-drop input { display: none; }
+    .file-drop .drop-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+    .file-drop .drop-hint { font-size: 0.78rem; color: #475569; margin-top: 0.4rem; }
+
+    button[type="submit"] {
+      width: 100%; padding: 0.85rem; background: #4f46e5; color: white;
+      border: none; border-radius: 8px; font-size: 1rem; font-weight: 600;
+      cursor: pointer; transition: background 0.2s; margin-top: 0.25rem;
+    }
+    button[type="submit"]:hover { background: #4338ca; }
+    button[type="submit"]:disabled { background: #2a3347; color: #64748b; cursor: not-allowed; }
+
+    .result { margin-top: 1.25rem; padding: 1rem; border-radius: 8px; display: none; font-size: 0.9rem; }
+    .result.success { background: #052e16; color: #4ade80; border: 1px solid #166534; display: block; }
+    .result.error   { background: #2d0a0a; color: #f87171; border: 1px solid #7f1d1d; display: block; }
+    .result a { color: inherit; font-weight: 700; }
+
+    .status-card {
+      margin-top: 1.25rem; padding: 1.25rem; border-radius: 10px;
+      background: #0f1117; border: 1px solid #1e2535; display: none;
+    }
+    .status-card.visible { display: block; }
+    .status-row { display: flex; justify-content: space-between; align-items: center; padding: 0.45rem 0; border-bottom: 1px solid #1e2535; font-size: 0.875rem; }
+    .status-row:last-child { border-bottom: none; }
+    .status-label { color: #64748b; }
+    .status-value { color: #e2e8f0; font-weight: 600; }
+    .status-folio { font-family: monospace; color: #818cf8; }
+    .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; }
+    .badge.aprobado       { background: #052e16; color: #4ade80; }
+    .badge.rechazado      { background: #2d0a0a; color: #f87171; }
+    .badge.revision_manual{ background: #2d1f00; color: #fbbf24; }
+    .badge.recibido, .badge.procesando { background: #0c1a2e; color: #60a5fa; }
+    .polling-bar { display: flex; align-items: center; gap: 0.5rem; font-size: 0.78rem; color: #475569; margin-top: 0.75rem; }
+    .spinner-sm { width: 14px; height: 14px; border: 2px solid #1e2535; border-top-color: #4f46e5; border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <nav>
+    <a class="nav-brand" href="/index.html">📦 Portal Importación</a>
+    <div class="nav-links">
+      <a href="/index.html" class="active">📋 Formulario</a>
+      <a href="/dashboard.html">📊 Dashboard</a>
+      <a href="/recomendaciones.html">💡 Recomendaciones</a>
+      <a href="/seguimiento.html">🔍 Seguimiento</a>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <h1>📦 Subir Documentación de Importación</h1>
+      <p class="subtitle">Sube la imagen o PDF de tu documentación. El sistema extraerá los datos automáticamente.</p>
+
+      <div class="requisitos">
+        <div class="requisitos-title">La documentación debe incluir</div>
+        <div class="req-grid">
+          <div class="req-item"><span>👤</span> Nombre del cliente</div>
+          <div class="req-item"><span>🪪</span> RFC del cliente</div>
+          <div class="req-item"><span>💰</span> Monto facturado</div>
+          <div class="req-item"><span>💱</span> Moneda</div>
+          <div class="req-item"><span>🧾</span> Número de factura</div>
+          <div class="req-item"><span>📋</span> Número de pedido</div>
+          <div class="req-item"><span>📦</span> Packing list</div>
+          <div class="req-item"><span>🚚</span> Guía de transporte</div>
+        </div>
+      </div>
+
+      <form id="formImportacion">
+        <div class="form-group">
+          <label>Documentación (imagen o PDF)</label>
+          <div class="file-drop" onclick="document.getElementById('documento').click()">
+            <input type="file" id="documento" name="documento" accept="image/*,application/pdf" required>
+            <div class="drop-icon">📎</div>
+            <div id="fileName">Haz clic para seleccionar un archivo</div>
+            <div class="drop-hint">JPG, PNG o PDF · máx. 10 MB</div>
+          </div>
+        </div>
+        <button type="submit" id="btnSubmit">Enviar Documentación</button>
+      </form>
+
+      <div class="result" id="result"></div>
+      <div class="status-card" id="statusCard"></div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('formImportacion');
+    const resultDiv = document.getElementById('result');
+    const btnSubmit = document.getElementById('btnSubmit');
+    const fileInput = document.getElementById('documento');
+    const fileName = document.getElementById('fileName');
+    const statusCard = document.getElementById('statusCard');
+    let pollingInterval = null;
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) fileName.textContent = fileInput.files[0].name;
+    });
+
+    function renderStatus(data) {
+      const pendiente = data.status === 'recibido' || data.status === 'procesando';
+      const motivo = (data.motivo_rechazo && data.motivo_rechazo !== '') ? data.motivo_rechazo : null;
+      const validaciones = Array.isArray(data.validaciones) ? data.validaciones : [];
+      const iconoVal = (v) => v.resultado ? '✅' : '❌';
+      const nombreVal = { sat: 'Validacion SAT', crm: 'Validacion CRM', erp: 'Validacion ERP' };
+
+      statusCard.className = 'status-card visible';
+      statusCard.innerHTML =
+        '<div class="status-row"><span class="status-label">Folio</span><span class="status-value status-folio">' + data.folio + '</span></div>' +
+        '<div class="status-row"><span class="status-label">Estado</span><span class="status-value"><span class="badge ' + data.status + '">' + data.status + '</span></span></div>' +
+        (data.nombre_cliente ? '<div class="status-row"><span class="status-label">Cliente</span><span class="status-value">' + data.nombre_cliente + '</span></div>' : '') +
+        (data.rfc_cliente ? '<div class="status-row"><span class="status-label">RFC</span><span class="status-value">' + data.rfc_cliente + '</span></div>' : '') +
+        (data.monto_facturado ? '<div class="status-row"><span class="status-label">Monto</span><span class="status-value">$' + Number(data.monto_facturado).toLocaleString('es-MX') + '</span></div>' : '') +
+        (data.tiempo_procesamiento ? '<div class="status-row"><span class="status-label">Tiempo</span><span class="status-value">' + data.tiempo_procesamiento + 's</span></div>' : '') +
+        (motivo ? '<div class="status-row"><span class="status-label">Motivo</span><span class="status-value" style="color:#f87171">' + motivo + '</span></div>' : '') +
+        (validaciones.length ? '<div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid #1e2535">' +
+          '<div style="font-size:0.75rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem">Validaciones</div>' +
+          validaciones.map(v =>
+            '<div class="status-row"><span class="status-label">' + iconoVal(v) + ' ' + (nombreVal[v.tipo] || v.tipo) + '</span><span class="status-value" style="font-size:0.8rem;color:#64748b">' + (v.detalle || '') + '</span></div>'
+          ).join('') +
+        '</div>' : '') +
+        (pendiente ? '<div class="polling-bar"><div class="spinner-sm"></div><span>Esperando respuesta del sistema...</span></div>' : '');
+    }
+
+    async function pollStatus(folio) {
+      try {
+        const res = await fetch('/api/importacion/status/' + folio);
+        if (!res.ok) return;
+        const data = await res.json();
+        renderStatus(data);
+        // Detener polling cuando ya hay resultado final
+        if (data.status !== 'recibido' && data.status !== 'procesando') {
+          clearInterval(pollingInterval);
+          pollingInterval = null;
+        }
+      } catch (e) { /* silencioso */ }
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      btnSubmit.disabled = true;
+      btnSubmit.textContent = 'Enviando...';
+      resultDiv.className = 'result';
+      resultDiv.style.display = 'none';
+      statusCard.className = 'status-card';
+      if (pollingInterval) { clearInterval(pollingInterval); pollingInterval = null; }
+
+      try {
+        const response = await fetch('/api/importacion/upload', { method: 'POST', body: new FormData(form) });
+        const data = await response.json();
+        if (data.success) {
+          resultDiv.className = 'result success';
+          resultDiv.innerHTML = '✅ <strong>Documentación recibida</strong> · Folio: <strong>' + data.folio + '</strong>';
+          form.reset();
+          fileName.textContent = 'Haz clic para seleccionar un archivo';
+          // Polling inmediato y luego cada 3 segundos
+          pollStatus(data.folio);
+          pollingInterval = setInterval(() => pollStatus(data.folio), 3000);
+        } else {
+          resultDiv.className = 'result error';
+          resultDiv.textContent = '❌ ' + (data.error || 'Error desconocido');
+        }
+      } catch (error) {
+        resultDiv.className = 'result error';
+        resultDiv.textContent = '❌ Error de conexión: ' + error.message;
+      } finally {
+        btnSubmit.disabled = false;
+        btnSubmit.textContent = 'Enviar Documentación';
+      }
+    });
+  </script>
+</body>
+</html>

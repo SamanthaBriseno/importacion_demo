@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recomendaciones — Importación</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; }
+    nav {
+      background: #0a0c12; border-bottom: 1px solid #1e2535;
+      padding: 0 2rem; display: flex; align-items: center;
+      justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100;
+    }
+    .nav-brand { color: #e2e8f0; font-weight: 700; font-size: 1rem; text-decoration: none; }
+    .nav-links { display: flex; gap: 0.5rem; }
+    .nav-links a {
+      color: #94a3b8; text-decoration: none; padding: 0.4rem 0.9rem;
+      border-radius: 6px; font-size: 0.875rem; font-weight: 500; transition: background 0.2s, color 0.2s;
+    }
+    .nav-links a:hover { background: #1e2535; color: #e2e8f0; }
+    .nav-links a.active { background: #4f46e5; color: #fff; }
+
+    .page { padding: 1.5rem 2rem; max-width: 1200px; margin: 0 auto; }
+
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem; }
+    .page-header h1 { font-size: 1.5rem; color: #f1f5f9; }
+    .page-header p { color: #64748b; font-size: 0.875rem; margin-top: 0.2rem; }
+    .header-actions { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+
+    .btn { padding: 0.5rem 1rem; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 0.875rem; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; }
+    .btn-primary { background: #4f46e5; color: white; }
+    .btn-primary:hover { background: #4338ca; }
+    .btn-primary:disabled { background: #2a3347; color: #64748b; cursor: not-allowed; }
+    .btn-outline { background: transparent; color: #818cf8; border: 1px solid #3730a3; }
+    .btn-outline:hover { background: #1e1b4b; }
+    .btn-green { background: #065f46; color: #34d399; border: 1px solid #047857; }
+    .btn-green:hover { background: #047857; }
+    .btn-green:disabled { background: #1a2a24; color: #475569; cursor: not-allowed; }
+
+    /* Toolbar de fecha e historial */
+    .toolbar {
+      display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;
+      background: #161b27; border: 1px solid #1e2535; border-radius: 10px; padding: 0.75rem 1rem;
+      flex-wrap: wrap;
+    }
+    .toolbar-label { font-size: 0.8rem; color: #64748b; font-weight: 600; white-space: nowrap; }
+    .fecha-tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; flex: 1; }
+    .fecha-tab {
+      padding: 0.3rem 0.75rem; border-radius: 6px; font-size: 0.78rem; font-weight: 600;
+      cursor: pointer; border: 1px solid #2a3347; background: #0f1117; color: #64748b;
+      transition: all 0.15s;
+    }
+    .fecha-tab:hover { border-color: #4f46e5; color: #a5b4fc; }
+    .fecha-tab.active { background: #1e1b4b; border-color: #4f46e5; color: #a5b4fc; }
+    .fecha-tab .tab-count { font-size: 0.68rem; color: #475569; margin-left: 0.3rem; }
+
+    /* Meta info */
+    .meta-bar {
+      display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;
+      font-size: 0.78rem; color: #475569; flex-wrap: wrap;
+    }
+    .meta-bar .modelo-badge {
+      background: #1e1b4b; color: #a78bfa; padding: 0.2rem 0.6rem;
+      border-radius: 6px; font-weight: 600; font-size: 0.75rem;
+    }
+    .meta-bar .gen-time { color: #475569; }
+
+    .summary-banner { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+    .summary-item { background: #161b27; border: 1px solid #1e2535; border-radius: 12px; padding: 1rem 1.25rem; text-align: center; }
+    .summary-item .val { font-size: 1.75rem; font-weight: 800; }
+    .summary-item .lbl { font-size: 0.72rem; color: #64748b; margin-top: 0.2rem; }
+    .val.red   { color: #f87171; }
+    .val.amber { color: #fbbf24; }
+    .val.green { color: #34d399; }
+    .val.blue  { color: #60a5fa; }
+
+    .layout { display: grid; grid-template-columns: 1fr 300px; gap: 1.5rem; }
+    @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+    .rec-list { display: flex; flex-direction: column; gap: 1rem; }
+    .rec-card {
+      background: #161b27; border: 1px solid #1e2535; border-radius: 12px;
+      padding: 1.25rem; border-left: 5px solid #2a3347; transition: box-shadow 0.2s;
+    }
+    .rec-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+    .rec-card.alta  { border-left-color: #ef4444; }
+    .rec-card.media { border-left-color: #f59e0b; }
+    .rec-card.baja  { border-left-color: #10b981; }
+    .rec-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem; }
+    .rec-title { font-weight: 700; font-size: 0.95rem; color: #f1f5f9; }
+    .rec-meta { display: flex; gap: 0.5rem; align-items: center; flex-shrink: 0; }
+    .priority-badge { font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .priority-badge.alta  { background: #2d0a0a; color: #f87171; }
+    .priority-badge.media { background: #2d1f00; color: #fbbf24; }
+    .priority-badge.baja  { background: #052e16; color: #4ade80; }
+    .freq-badge { font-size: 0.75rem; font-weight: 600; color: #64748b; background: #1e2535; padding: 0.2rem 0.55rem; border-radius: 999px; }
+    .rec-accion { background: #0f1117; border: 1px solid #1e2535; border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.875rem; color: #cbd5e1; line-height: 1.5; }
+    .rec-accion::before { content: '💡 '; }
+    .rec-steps { margin-top: 0.75rem; padding-left: 1.25rem; }
+    .rec-steps li { font-size: 0.82rem; color: #64748b; margin-bottom: 0.3rem; line-height: 1.4; }
+
+    .sidebar { display: flex; flex-direction: column; gap: 1rem; }
+    .card { background: #161b27; border: 1px solid #1e2535; border-radius: 12px; padding: 1.25rem; }
+    .card-title { font-size: 0.9rem; font-weight: 700; color: #f1f5f9; margin-bottom: 1rem; }
+    .chart-wrap { position: relative; height: 190px; }
+
+    .impacto-item { display: flex; justify-content: space-between; align-items: center; padding: 0.45rem 0; border-bottom: 1px solid #1e2535; }
+    .impacto-item:last-child { border-bottom: none; }
+    .impacto-label { font-size: 0.8rem; color: #94a3b8; }
+    .impacto-val { font-size: 0.8rem; font-weight: 700; color: #34d399; }
+
+    .checklist { list-style: none; }
+    .checklist li { display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.4rem 0; font-size: 0.82rem; color: #64748b; border-bottom: 1px solid #1a2030; }
+    .checklist li:last-child { border-bottom: none; }
+
+    /* Estado vacío */
+    .empty-state { text-align: center; padding: 3rem 2rem; }
+    .empty-state .icon { font-size: 3rem; margin-bottom: 1rem; }
+    .empty-state h3 { font-size: 1.1rem; color: #f1f5f9; margin-bottom: 0.5rem; }
+    .empty-state p { color: #64748b; font-size: 0.875rem; margin-bottom: 1.5rem; }
+
+    /* Generando overlay */
+    .generating-bar {
+      display: none; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem;
+      background: #1e1b4b; border: 1px solid #3730a3; border-radius: 8px;
+      margin-bottom: 1rem; font-size: 0.875rem; color: #a5b4fc;
+    }
+    .generating-bar.visible { display: flex; }
+    .spinner-sm { width: 16px; height: 16px; border: 2px solid #3730a3; border-top-color: #818cf8; border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+
+    .loading { text-align: center; padding: 3rem; color: #475569; font-size: 0.9rem; }
+    .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid #1e2535; border-top-color: #4f46e5; border-radius: 50%; animation: spin 0.7s linear infinite; margin-bottom: 0.5rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <nav>
+    <a class="nav-brand" href="/index.html">📦 Portal Importación</a>
+    <div class="nav-links">
+      <a href="/index.html">📋 Formulario</a>
+      <a href="/dashboard.html">📊 Dashboard</a>
+      <a href="/recomendaciones.html" class="active">💡 Recomendaciones</a>
+      <a href="/seguimiento.html">🔍 Seguimiento</a>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="page-header">
+      <div>
+        <h1>💡 Recomendaciones de Mejora</h1>
+        <p>Generadas por Ollama · guardadas por día en la base de datos</p>
+      </div>
+      <div class="header-actions">
+        <a href="/dashboard.html" class="btn btn-outline">📊 Dashboard</a>
+        <button class="btn btn-green" id="btnGenerar" onclick="generarRecomendaciones()">
+          ✨ Generar con IA
+        </button>
+      </div>
+    </div>
+
+    <!-- Barra de progreso generando -->
+    <div class="generating-bar" id="generatingBar">
+      <div class="spinner-sm"></div>
+      <span>Consultando Ollama... esto puede tardar unos segundos por cada causa.</span>
+    </div>
+
+    <!-- Selector de fechas históricas -->
+    <div class="toolbar" id="toolbar" style="display:none">
+      <span class="toolbar-label">📅 Historial:</span>
+      <div class="fecha-tabs" id="fechaTabs"></div>
+    </div>
+
+    <!-- Meta info del conjunto actual -->
+    <div class="meta-bar" id="metaBar" style="display:none"></div>
+
+    <!-- KPIs resumen -->
+    <div id="summaryBanner"></div>
+
+    <!-- Contenido principal -->
+    <div id="mainContent">
+      <div class="loading"><div class="spinner"></div><br>Cargando...</div>
+    </div>
+  </div>
+
+  <script>
+    let chartImpacto;
+    let fechaActual = new Date().toISOString().slice(0, 10);
+    const DARK = { legend: '#94a3b8' };
+
+    function getPrioridadNum(p) { return p === 'alta' ? 3 : p === 'media' ? 2 : 1; }
+
+    // ── Cargar recomendaciones guardadas para una fecha ──
+    async function cargarFecha(fecha) {
+      fechaActual = fecha;
+      actualizarTabsFecha(fecha);
+      document.getElementById('mainContent').innerHTML = '<div class="loading"><div class="spinner"></div><br>Cargando...</div>';
+      document.getElementById('summaryBanner').innerHTML = '';
+      document.getElementById('metaBar').style.display = 'none';
+
+      try {
+        const [recRes, kpisRes] = await Promise.all([
+          fetch('/api/importacion/recomendaciones?fecha=' + fecha),
+          fetch('/api/importacion/kpis')
+        ]);
+        const rec = await recRes.json();
+        const kpis = await kpisRes.json();
+        renderFechasTabs(rec.fechas_disponibles || [], fecha);
+        renderAll(kpis, rec);
+      } catch (err) {
+        document.getElementById('mainContent').innerHTML = '<div class="loading">❌ Error: ' + err.message + '</div>';
+      }
+    }
+
+    // ── Generar con Ollama y guardar ──
+    async function generarRecomendaciones() {
+      const btn = document.getElementById('btnGenerar');
+      const bar = document.getElementById('generatingBar');
+      btn.disabled = true;
+      btn.textContent = '⏳ Generando...';
+      bar.classList.add('visible');
+
+      try {
+        const [recRes, kpisRes] = await Promise.all([
+          fetch('/api/importacion/recomendaciones/generar', { method: 'POST' }),
+          fetch('/api/importacion/kpis')
+        ]);
+        const rec = await recRes.json();
+        const kpis = await kpisRes.json();
+        fechaActual = rec.fecha;
+        renderFechasTabs(rec.fechas_disponibles || [], rec.fecha);
+        renderAll(kpis, rec);
+      } catch (err) {
+        document.getElementById('mainContent').innerHTML = '<div class="loading">❌ Error al generar: ' + err.message + '</div>';
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '✨ Generar con IA';
+        bar.classList.remove('visible');
+      }
+    }
+
+    function renderFechasTabs(fechas, activa) {
+      const toolbar = document.getElementById('toolbar');
+      const tabs = document.getElementById('fechaTabs');
+      if (!fechas.length) { toolbar.style.display = 'none'; return; }
+      toolbar.style.display = 'flex';
+      tabs.innerHTML = fechas.map(f =>
+        '<button class="fecha-tab' + (f.fecha === activa ? ' active' : '') + '" onclick="cargarFecha(\'' + f.fecha + '\')">' +
+          f.fecha + '<span class="tab-count">(' + f.total + ')</span>' +
+        '</button>'
+      ).join('');
+    }
+
+    function actualizarTabsFecha(activa) {
+      document.querySelectorAll('.fecha-tab').forEach(t => {
+        t.classList.toggle('active', t.textContent.startsWith(activa));
+      });
+    }
+
+    function renderAll(kpis, rec) {
+      const r = kpis.resumen || {};
+      const total = r.total_expedientes || 0;
+      const rechazados = r.rechazados || 0;
+      const recomendaciones = rec.recomendaciones || [];
+      const modelo = rec.modelo;
+      const fecha = rec.fecha;
+      const altaCount = recomendaciones.filter(x => x.prioridad === 'alta').length;
+      const tasa = total ? Math.round(((total - rechazados) / total) * 100) : 0;
+
+      // Meta bar
+      const metaBar = document.getElementById('metaBar');
+      if (recomendaciones.length) {
+        const genTime = recomendaciones[0]?.fecha_generacion
+          ? new Date(recomendaciones[0].fecha_generacion).toLocaleString('es-MX')
+          : '';
+        metaBar.style.display = 'flex';
+        metaBar.innerHTML =
+          (modelo ? '<span class="modelo-badge">🤖 ' + modelo + '</span>' : '') +
+          '<span>📅 ' + fecha + '</span>' +
+          (genTime ? '<span class="gen-time">Generado: ' + genTime + '</span>' : '');
+      } else {
+        metaBar.style.display = 'none';
+      }
+
+      // Summary
+      document.getElementById('summaryBanner').innerHTML =
+        '<div class="summary-banner">' +
+          '<div class="summary-item"><div class="val red">' + rechazados + '</div><div class="lbl">Rechazados</div></div>' +
+          '<div class="summary-item"><div class="val amber">' + recomendaciones.length + '</div><div class="lbl">Causas Analizadas</div></div>' +
+          '<div class="summary-item"><div class="val blue">' + altaCount + '</div><div class="lbl">Prioridad Alta</div></div>' +
+          '<div class="summary-item"><div class="val green">' + tasa + '%</div><div class="lbl">Tasa de Éxito</div></div>' +
+        '</div>';
+
+      // Sin recomendaciones
+      if (!recomendaciones.length) {
+        const hoy = new Date().toISOString().slice(0, 10);
+        const esHoy = fecha === hoy;
+        document.getElementById('mainContent').innerHTML =
+          '<div class="card"><div class="empty-state">' +
+            '<div class="icon">' + (esHoy ? '🤖' : '📭') + '</div>' +
+            '<h3>' + (esHoy ? 'Sin recomendaciones para hoy' : 'Sin recomendaciones para ' + fecha) + '</h3>' +
+            '<p>' + (esHoy ? 'Haz clic en "Generar con IA" para analizar las causas de rechazo con Ollama.' : 'No se generaron recomendaciones este día.') + '</p>' +
+            (esHoy ? '<button class="btn btn-green" onclick="generarRecomendaciones()">✨ Generar ahora</button>' : '') +
+          '</div></div>';
+        return;
+      }
+
+      const sorted = [...recomendaciones].sort((a, b) =>
+        getPrioridadNum(b.prioridad || 'media') - getPrioridadNum(a.prioridad || 'media') || b.frecuencia - a.frecuencia
+      );
+
+      const impactoRows = sorted.map(x =>
+        '<div class="impacto-item"><span class="impacto-label">' + x.causa + '</span><span class="impacto-val">-' + x.frecuencia + ' casos</span></div>'
+      ).join('');
+
+      document.getElementById('mainContent').innerHTML =
+        '<div class="layout">' +
+          '<div class="rec-list" id="recList"></div>' +
+          '<div class="sidebar">' +
+            '<div class="card"><div class="card-title">📊 Distribución</div><div class="chart-wrap"><canvas id="chartImpacto"></canvas></div></div>' +
+            '<div class="card"><div class="card-title">📈 Impacto</div>' + impactoRows + '</div>' +
+            '<div class="card"><div class="card-title">✅ Checklist</div><ul class="checklist">' +
+              '<li>📄 Validar CFDI antes de subir</li>' +
+              '<li>📦 Cotejar packing list con ERP</li>' +
+              '<li>👤 Verificar datos del cliente en CRM</li>' +
+              '<li>🔢 Confirmar número de pedido activo</li>' +
+              '<li>💱 Revisar moneda y tipo de cambio</li>' +
+              '<li>📋 Adjuntar todos los documentos</li>' +
+            '</ul></div>' +
+          '</div>' +
+        '</div>';
+
+      renderRecCards(sorted);
+      renderChartImpacto(sorted);
+    }
+
+    function renderRecCards(sorted) {
+      document.getElementById('recList').innerHTML = sorted.map((item, i) => {
+        const prioridad = item.prioridad || 'media';
+        const pasos = Array.isArray(item.pasos) ? item.pasos : (typeof item.pasos === 'string' ? JSON.parse(item.pasos) : []);
+        return '<div class="rec-card ' + prioridad + '">' +
+          '<div class="rec-header">' +
+            '<div class="rec-title">' + (i+1) + '. ' + item.causa + '</div>' +
+            '<div class="rec-meta">' +
+              '<span class="freq-badge">🔁 ' + item.frecuencia + ' casos</span>' +
+              '<span class="priority-badge ' + prioridad + '">' + prioridad + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="rec-accion">' + (item.recomendacion || '') + '</div>' +
+          (pasos.length ? '<ul class="rec-steps">' + pasos.map(p => '<li>' + p + '</li>').join('') + '</ul>' : '') +
+        '</div>';
+      }).join('');
+    }
+
+    function renderChartImpacto(sorted) {
+      if (chartImpacto) { chartImpacto.destroy(); }
+      const colors = ['#ef4444','#f97316','#f59e0b','#84cc16','#06b6d4'];
+      chartImpacto = new Chart(document.getElementById('chartImpacto'), {
+        type: 'doughnut',
+        data: {
+          labels: sorted.map(r => r.causa),
+          datasets: [{ data: sorted.map(r => r.frecuencia), backgroundColor: sorted.map((_,i) => colors[i%colors.length]), borderColor: '#161b27', borderWidth: 3 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, cutout: '55%',
+          plugins: { legend: { position: 'bottom', labels: { color: DARK.legend, font: { size: 10 }, padding: 8 } } }
+        }
+      });
+    }
+
+    // Cargar el día de hoy al entrar
+    cargarFecha(fechaActual);
+  </script>
+</body>
+</html>

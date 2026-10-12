@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Importación</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; }
+    nav {
+      background: #0a0c12; border-bottom: 1px solid #1e2535;
+      padding: 0 2rem; display: flex; align-items: center;
+      justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100;
+    }
+    .nav-brand { color: #e2e8f0; font-weight: 700; font-size: 1rem; text-decoration: none; }
+    .nav-links { display: flex; gap: 0.5rem; }
+    .nav-links a {
+      color: #94a3b8; text-decoration: none; padding: 0.4rem 0.9rem;
+      border-radius: 6px; font-size: 0.875rem; font-weight: 500; transition: background 0.2s, color 0.2s;
+    }
+    .nav-links a:hover { background: #1e2535; color: #e2e8f0; }
+    .nav-links a.active { background: #4f46e5; color: #fff; }
+
+    .page { padding: 1.5rem 2rem; max-width: 1400px; margin: 0 auto; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+    .page-header h1 { font-size: 1.5rem; color: #f1f5f9; }
+    .page-header p { color: #64748b; font-size: 0.875rem; margin-top: 0.2rem; }
+    .header-actions { display: flex; gap: 0.75rem; align-items: center; }
+    .last-update { font-size: 0.78rem; color: #475569; }
+
+    .btn { padding: 0.5rem 1rem; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 0.875rem; transition: background 0.2s; text-decoration: none; display: inline-block; }
+    .btn-primary { background: #4f46e5; color: white; }
+    .btn-primary:hover { background: #4338ca; }
+    .btn-outline { background: transparent; color: #818cf8; border: 1px solid #3730a3; }
+    .btn-outline:hover { background: #1e1b4b; }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .kpi-card {
+      background: #161b27; border: 1px solid #1e2535; padding: 1.25rem 1.5rem;
+      border-radius: 12px; border-left: 4px solid #2a3347;
+      display: flex; flex-direction: column; gap: 0.5rem;
+    }
+    .kpi-card.total    { border-left-color: #6366f1; }
+    .kpi-card.aprobado { border-left-color: #10b981; }
+    .kpi-card.rechazado{ border-left-color: #ef4444; }
+    .kpi-card.revision { border-left-color: #f59e0b; }
+    .kpi-card.tiempo   { border-left-color: #3b82f6; }
+    .kpi-card.monto    { border-left-color: #8b5cf6; }
+    .kpi-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .kpi-icon { font-size: 1.4rem; }
+    .kpi-pct { font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.4rem; border-radius: 4px; }
+    .kpi-pct.up   { background: #052e16; color: #4ade80; }
+    .kpi-pct.down { background: #2d0a0a; color: #f87171; }
+    .kpi-value { font-size: 2rem; font-weight: 800; line-height: 1; }
+    .kpi-value.green  { color: #34d399; }
+    .kpi-value.red    { color: #f87171; }
+    .kpi-value.amber  { color: #fbbf24; }
+    .kpi-value.blue   { color: #60a5fa; }
+    .kpi-value.purple { color: #a78bfa; }
+    .kpi-label { font-size: 0.78rem; color: #64748b; font-weight: 500; }
+
+    .card { background: #161b27; border: 1px solid #1e2535; border-radius: 12px; padding: 1.25rem; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .card-title { font-size: 0.95rem; font-weight: 700; color: #f1f5f9; }
+    .card-subtitle { font-size: 0.75rem; color: #475569; margin-top: 0.1rem; }
+
+    .tasa-card { margin-bottom: 1rem; }
+    .tasa-bar-bg { background: #1e2535; border-radius: 999px; height: 10px; overflow: hidden; }
+    .tasa-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #10b981, #34d399); transition: width 0.8s ease; }
+    .tasa-label { display: flex; justify-content: space-between; font-size: 0.75rem; color: #475569; margin-top: 0.35rem; }
+    .tasa-pct { font-size: 1.5rem; font-weight: 800; color: #34d399; }
+
+    .charts-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    .chart-wrap { position: relative; height: 220px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    thead th {
+      text-align: left; padding: 0.6rem 0.75rem; background: #0f1117;
+      color: #475569; font-weight: 600; font-size: 0.75rem;
+      text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid #1e2535;
+    }
+    tbody td { padding: 0.65rem 0.75rem; border-bottom: 1px solid #1a2030; color: #cbd5e1; }
+    tbody tr:hover { background: #1a2030; }
+
+    .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
+    .badge.aprobado      { background: #052e16; color: #4ade80; }
+    .badge.rechazado     { background: #2d0a0a; color: #f87171; }
+    .badge.revision_manual { background: #2d1f00; color: #fbbf24; }
+    .badge.recibido, .badge.procesando { background: #0c1a2e; color: #60a5fa; }
+
+    .loading { text-align: center; padding: 3rem; color: #475569; font-size: 0.9rem; }
+    .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid #1e2535; border-top-color: #4f46e5; border-radius: 50%; animation: spin 0.7s linear infinite; margin-bottom: 0.5rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 900px) { .charts-row { grid-template-columns: 1fr; } }
+
+    .period-filter { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.25rem; }
+    .period-btn {
+      padding: 0.35rem 0.9rem; border-radius: 999px; border: 1px solid #2a3142;
+      background: transparent; color: #8b92a8; font-size: 0.82rem; font-weight: 600;
+      cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .period-btn:hover { border-color: #6366f1; color: #c7d2fe; }
+    .period-btn.active { background: #6366f1; color: #fff; border-color: #6366f1; }
+    .period-custom { display: none; gap: 0.5rem; align-items: center; }
+    .period-custom.visible { display: flex; }
+    .period-custom input[type="date"] {
+      background: #161b27; border: 1px solid #2a3142; color: #e2e8f0;
+      border-radius: 6px; padding: 0.3rem 0.6rem; font-size: 0.82rem;
+    }
+    .period-custom input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.6); }
+    .metrics-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    .metric-vals { display: flex; gap: 1.5rem; margin: 0.75rem 0; }
+    .metric-val-item { display: flex; flex-direction: column; gap: 0.2rem; }
+    .metric-val-item .val { font-size: 1.5rem; font-weight: 800; line-height: 1; }
+    .metric-val-item .lbl { font-size: 0.72rem; color: #64748b; }
+    .sparkline-wrap { height: 60px; position: relative; }
+    @media (max-width: 900px) { .metrics-grid { grid-template-columns: 1fr; } }
+    .causas-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; margin-top: 0.5rem; }
+    .causas-table thead th { text-align: left; padding: 0.5rem 0.75rem; color: #475569; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #1e2535; }
+    .causas-table tbody td { padding: 0.65rem 0.75rem; border-bottom: 1px solid #1a2030; color: #cbd5e1; vertical-align: middle; }
+    .causas-table tbody tr:last-child td { border-bottom: none; }
+    .causas-table tbody tr:hover { background: #1a2030; }
+    .causa-badge { display: inline-block; padding: 0.2rem 0.55rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; color: #fff; }
+    .causa-bar-bg { background: #1e2535; border-radius: 999px; height: 6px; min-width: 80px; overflow: hidden; }
+    .causa-bar-fill { height: 100%; border-radius: 999px; }
+    .donas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    .dona-inner { display: flex; align-items: center; gap: 1.5rem; }
+    .dona-chart-wrap { position: relative; width: 160px; height: 160px; flex-shrink: 0; }
+    .dona-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; pointer-events: none; }
+    .dona-center-val { font-size: 1.6rem; font-weight: 800; color: #f1f5f9; line-height: 1; }
+    .dona-center-lbl { font-size: 0.72rem; color: #64748b; }
+    .dona-legend { display: flex; flex-direction: column; gap: 0.5rem; }
+    .dona-legend-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; }
+    .dona-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .dona-legend-name { color: #94a3b8; flex: 1; }
+    .dona-legend-val { color: #f1f5f9; font-weight: 700; }
+    @media (max-width: 768px) { .donas-grid { grid-template-columns: 1fr; } }
+    .facturas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    .factura-total { font-size: 1.4rem; font-weight: 800; color: #f1f5f9; margin-bottom: 0.25rem; }
+    .factura-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid #1e2535; }
+    .factura-item:last-child { border-bottom: none; }
+    .factura-nombre { font-size: 0.82rem; color: #94a3b8; width: 130px; flex-shrink: 0; }
+    .factura-bar-bg { flex: 1; background: #1e2535; border-radius: 999px; height: 6px; overflow: hidden; }
+    .factura-bar-fill { height: 100%; border-radius: 999px; }
+    .factura-monto { font-size: 0.82rem; font-weight: 700; color: #f1f5f9; width: 80px; text-align: right; flex-shrink: 0; }
+    @media (max-width: 768px) { .facturas-grid { grid-template-columns: 1fr; } }
+
+    .period-custom .btn-apply {
+      padding: 0.3rem 0.7rem; border-radius: 6px; border: none;
+      background: #6366f1; color: #fff; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a class="nav-brand" href="/index.html">📦 Portal Importación</a>
+    <div class="nav-links">
+      <a href="/index.html">📋 Formulario</a>
+      <a href="/dashboard.html" class="active">📊 Dashboard</a>
+      <a href="/recomendaciones.html">💡 Recomendaciones</a>
+      <a href="/seguimiento.html">🔍 Seguimiento</a>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="page-header">
+      <div>
+        <h1>📊 Dashboard Ejecutivo</h1>
+        <p>Resumen de expedientes, KPIs y tendencias de importación</p>
+      </div>
+      <div class="header-actions">
+        <span class="last-update" id="lastUpdate"></span>
+        <a href="/recomendaciones.html" class="btn btn-outline">💡 Recomendaciones</a>
+        <button class="btn btn-primary" onclick="cargarDatos()">🔄 Actualizar</button>
+      </div>
+    </div>
+    <div class="period-filter">
+      <button class="period-btn" data-periodo="hoy" onclick="setPeriodo(this)">Hoy</button>
+      <button class="period-btn" data-periodo="7d" onclick="setPeriodo(this)">7 días</button>
+      <button class="period-btn active" data-periodo="30d" onclick="setPeriodo(this)">30 días</button>
+      <button class="period-btn" data-periodo="custom" onclick="setPeriodo(this)">Personalizado</button>
+      <div class="period-custom" id="customRange">
+        <input type="date" id="fechaDesde">
+        <span style="color:#8b92a8;font-size:0.8rem">→</span>
+        <input type="date" id="fechaHasta">
+        <button class="btn-apply" onclick="aplicarCustom()">Aplicar</button>
+      </div>
+    </div>
+    <div id="mainContent">
+      <div class="loading"><div class="spinner"></div><br>Cargando datos...</div>
+    </div>
+  </div>
+
+  <script>
+    let charts = {};
+    const DARK = { grid: '#1e2535', text: '#64748b', legend: '#94a3b8' };
+    let periodoActivo = '30d';
+
+    function buildPeriodoParams() {
+      if (periodoActivo === 'custom') {
+        const desde = document.getElementById('fechaDesde').value;
+        const hasta = document.getElementById('fechaHasta').value;
+        return 'desde=' + desde + '&hasta=' + hasta;
+      }
+      return 'periodo=' + periodoActivo;
+    }
+
+    function setPeriodo(btn) {
+      document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      periodoActivo = btn.dataset.periodo;
+      const custom = document.getElementById('customRange');
+      if (periodoActivo === 'custom') { custom.classList.add('visible'); return; }
+      custom.classList.remove('visible');
+      cargarDatos();
+    }
+
+    function aplicarCustom() {
+      const desde = document.getElementById('fechaDesde').value;
+      const hasta = document.getElementById('fechaHasta').value;
+      if (!desde || !hasta) return;
+      cargarDatos();
+    }
+
+    function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+    function pct(a, b) { return b ? Math.round((a / b) * 100) : 0; }
+    function fmt(n) { return Number(n || 0).toLocaleString('es-MX'); }
+    function fmtMoney(n) { return '$' + Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 }); }
+
+    async function cargarDatos() {
+      try {
+        const p = buildPeriodoParams();
+        const [kpisRes, expRes, metRes] = await Promise.all([
+          fetch('/api/importacion/kpis?' + p),
+          fetch('/api/importacion/expedientes-recientes?' + p),
+          fetch('/api/importacion/metricas-avanzadas?' + p)
+        ]);
+        const kpis = await kpisRes.json();
+        const exp = expRes.ok ? await expRes.json() : { expedientes: [] };
+        const met = metRes.ok ? await metRes.json() : {};
+        renderAll(kpis, exp, met);
+        document.getElementById('lastUpdate').textContent = 'Actualizado: ' + new Date().toLocaleTimeString('es-MX');
+      } catch (err) {
+        document.getElementById('mainContent').innerHTML = '<div class="loading">❌ Error: ' + err.message + '</div>';
+      }
+    }
+
+    function renderAll(kpis, exp, met) {
+      const r = kpis.resumen || {};
+      const total = r.total_expedientes || 0;
+      const aprobados = r.aprobados || 0;
+      const rechazados = r.rechazados || 0;
+      const revision = r.revision_manual || 0;
+      const tasa = pct(aprobados, total);
+
+      const t = met.tiempo || {};
+      const v = met.volumen || {};
+      const m = met.monto || {};
+      const spark = met.spark || [];
+      const causasTop5 = met.causas_top5 || kpis.causas_rechazo || [];
+      const topEx = met.top_exitosas || [];
+      const topFa = met.top_fallidas || [];
+
+      const totalSol = (v.exitosas || 0) + (v.rechazadas || 0);
+      const pctEx = pct(v.exitosas || 0, totalSol);
+      const pctRe = pct(v.rechazadas || 0, totalSol);
+      const totalCausas = causasTop5.reduce((s, c) => s + c.cantidad, 0);
+      const maxEx = topEx.length ? topEx[0].monto : 1;
+      const maxFa = topFa.length ? topFa[0].monto : 1;
+
+      const CAUSA_COLORS = ['#ef4444','#f59e0b','#fbbf24','#facc15','#fde047'];
+      const CAUSA_COLORS_RGBA = ['rgba(239,68,68,0.2)','rgba(245,158,11,0.2)','rgba(251,191,36,0.2)','rgba(250,204,21,0.2)','rgba(253,224,71,0.2)'];
+
+      function causasTableRows() {
+        if (!causasTop5.length) return '<tr><td colspan="4" style="color:#475569">Sin datos</td></tr>';
+        return causasTop5.slice(0,5).map((c, i) => {
+          const p = totalCausas ? Math.round((c.cantidad / totalCausas) * 100) : 0;
+          const col = CAUSA_COLORS[i] || '#6366f1';
+          const colA = CAUSA_COLORS_RGBA[i] || 'rgba(99,102,241,0.2)';
+          return '<tr><td>' + (c.motivo_rechazo||'—') + '</td><td>' + c.cantidad + '</td>' +
+            '<td><span class="causa-badge" style="background:' + colA + ';color:' + col + '">' + p + '%</span></td>' +
+            '<td><div class="causa-bar-bg"><div class="causa-bar-fill" style="width:' + p + '%;background:' + col + '"></div></div></td></tr>';
+        }).join('');
+      }
+
+      function facturaRows(list, color) {
+        if (!list.length) return '<p style="color:#475569;font-size:0.82rem;padding:0.5rem 0">Sin datos</p>';
+        const max = list[0].monto;
+        return list.map(f => {
+          const w = max ? Math.round((f.monto / max) * 100) : 0;
+          return '<div class="factura-item"><span class="factura-nombre">' + (f.factura||'—') + '</span>' +
+            '<div class="factura-bar-bg"><div class="factura-bar-fill" style="width:' + w + '%;background:' + color + '"></div></div>' +
+            '<span class="factura-monto">$' + Number(f.monto).toLocaleString('es-MX') + '</span></div>';
+        }).join('');
+      }
+
+      document.getElementById('mainContent').innerHTML =
+        '<div class="kpi-grid">' +
+          '<div class="kpi-card total"><div class="kpi-top"><span class="kpi-icon">📁</span></div><div class="kpi-value">' + fmt(total) + '</div><div class="kpi-label">Total Expedientes</div></div>' +
+          '<div class="kpi-card aprobado"><div class="kpi-top"><span class="kpi-icon">✅</span><span class="kpi-pct up">' + pct(aprobados,total) + '%</span></div><div class="kpi-value green">' + fmt(aprobados) + '</div><div class="kpi-label">Aprobados</div></div>' +
+          '<div class="kpi-card rechazado"><div class="kpi-top"><span class="kpi-icon">❌</span><span class="kpi-pct down">' + pct(rechazados,total) + '%</span></div><div class="kpi-value red">' + fmt(rechazados) + '</div><div class="kpi-label">Rechazados</div></div>' +
+          '<div class="kpi-card revision"><div class="kpi-top"><span class="kpi-icon">⏳</span><span class="kpi-pct up">' + pct(revision,total) + '%</span></div><div class="kpi-value amber">' + fmt(revision) + '</div><div class="kpi-label">Revisión Manual</div></div>' +
+          '<div class="kpi-card tiempo"><div class="kpi-top"><span class="kpi-icon">⚡</span></div><div class="kpi-value blue">' + (r.tiempo_promedio || 0) + 's</div><div class="kpi-label">Tiempo Promedio</div></div>' +
+          '<div class="kpi-card monto"><div class="kpi-top"><span class="kpi-icon">💰</span></div><div class="kpi-value purple" style="font-size:1.2rem">' + fmtMoney(r.monto_total) + '</div><div class="kpi-label">Monto Total</div></div>' +
+        '</div>' +
+        '<div class="card tasa-card"><div class="card-header"><div><div class="card-title">Tasa de Aprobación Global</div></div><span class="tasa-pct">' + tasa + '%</span></div>' +
+          '<div class="tasa-bar-bg"><div class="tasa-bar-fill" id="tasaFill" style="width:0%"></div></div>' +
+          '<div class="tasa-label"><span>0%</span><span>Meta: 85%</span><span>100%</span></div></div>' +
+        '<div class="charts-row">' +
+          '<div class="card"><div class="card-header"><div><div class="card-title">Distribución</div><div class="card-subtitle">Por estado</div></div></div><div class="chart-wrap"><canvas id="chartDonut"></canvas></div></div>' +
+          '<div class="card"><div class="card-header"><div><div class="card-title">Causas de Rechazo</div><div class="card-subtitle">Top motivos</div></div></div><div class="chart-wrap"><canvas id="chartCausas"></canvas></div></div>' +
+          '<div class="card"><div class="card-header"><div><div class="card-title">Tendencia Diaria</div><div class="card-subtitle">Últimos 30 días</div></div></div><div class="chart-wrap"><canvas id="chartTendencia"></canvas></div></div>' +
+        '</div>' +
+        '<div class="metrics-grid">' +
+          '<div class="card"><div class="card-header"><div><div class="card-title">Tiempo de ejecución del flujo</div><div class="card-subtitle">por promedio, mínimo y máximo</div></div></div>' +
+            '<div class="metric-vals">' +
+              '<div class="metric-val-item"><span class="val" style="color:#34d399">' + (t.promedio||0) + ' min</span><span class="lbl">Promedio</span></div>' +
+              '<div class="metric-val-item"><span class="val" style="color:#34d399">' + (t.minimo||0) + ' min</span><span class="lbl">Mínimo</span></div>' +
+              '<div class="metric-val-item"><span class="val" style="color:#f87171">' + (t.maximo||0) + ' min</span><span class="lbl">Máximo</span></div>' +
+            '</div>' +
+            '<div class="sparkline-wrap"><canvas id="sparkTiempo"></canvas></div></div>' +
+          '<div class="card"><div class="card-header"><div><div class="card-title">Volumen de solicitudes</div><div class="card-subtitle">por exitosas y rechazadas</div></div></div>' +
+            '<div class="metric-vals">' +
+              '<div class="metric-val-item"><span class="val" style="color:#34d399">' + fmt(v.exitosas||0) + '</span><span class="lbl">Exitosas</span></div>' +
+              '<div class="metric-val-item"><span class="val" style="color:#f87171">' + fmt(v.rechazadas||0) + '</span><span class="lbl">Rechazadas</span></div>' +
+            '</div>' +
+            '<div class="sparkline-wrap"><canvas id="sparkVolumen"></canvas></div></div>' +
+          '<div class="card"><div class="card-header"><div><div class="card-title">Monto de facturas</div><div class="card-subtitle">por exitosas y fallidas</div></div></div>' +
+            '<div class="metric-vals">' +
+              '<div class="metric-val-item"><span class="val" style="color:#34d399">$' + (Number(m.exitosas||0)/1e6).toFixed(2) + 'M</span><span class="lbl">Exitosas</span></div>' +
+              '<div class="metric-val-item"><span class="val" style="color:#f87171">$' + (Number(m.fallidas||0)/1e6).toFixed(2) + 'M</span><span class="lbl">Fallidas</span></div>' +
+            '</div>' +
+            '<div class="sparkline-wrap"><canvas id="sparkMonto"></canvas></div></div>' +
+        '</div>' +
+        '<div class="card" style="margin-bottom:1rem"><div class="card-header"><div><div class="card-title">Top 5 causas de rechazo</div><div class="card-subtitle">por % del total de solicitudes rechazadas</div></div></div>' +
+        '<table class="causas-table"><thead><tr><th>Causa</th><th>Casos</th><th>% Rechazo</th><th style="min-width:120px"></th></tr></thead><tbody>' +
+          causasTableRows() +
+        '</tbody></table></div>' +
+        '<div class="donas-grid">' +
+          '<div class="card"><div class="card-header"><div><div class="card-title">Solicitudes por resultado</div><div class="card-subtitle">exitosas vs rechazadas</div></div></div>' +
+            '<div class="dona-inner">' +
+              '<div class="dona-chart-wrap"><canvas id="donaResultado"></canvas><div class="dona-center"><div class="dona-center-val">' + fmt(totalSol) + '</div><div class="dona-center-lbl">solicitudes</div></div></div>' +
+              '<div class="dona-legend">' +
+                '<div class="dona-legend-item"><div class="dona-legend-dot" style="background:#10b981"></div><span class="dona-legend-name">Exitosas</span><span class="dona-legend-val">' + fmt(v.exitosas||0) + ' &nbsp;' + pctEx + '%</span></div>' +
+                '<div class="dona-legend-item"><div class="dona-legend-dot" style="background:#ef4444"></div><span class="dona-legend-name">Rechazadas</span><span class="dona-legend-val">' + fmt(v.rechazadas||0) + ' &nbsp;' + pctRe + '%</span></div>' +
+              '</div>' +
+            '</div></div>' +
+          '<div class="card"><div class="card-header"><div><div class="card-title">Composición de causas de rechazo</div><div class="card-subtitle">por motivo</div></div></div>' +
+            '<div class="dona-inner">' +
+              '<div class="dona-chart-wrap"><canvas id="donaCausas"></canvas><div class="dona-center"><div class="dona-center-val">' + fmt(v.rechazadas||0) + '</div><div class="dona-center-lbl">rechazadas</div></div></div>' +
+              '<div class="dona-legend">' +
+                causasTop5.slice(0,5).map((c,i) => {
+                  const p2 = totalCausas ? Math.round((c.cantidad/totalCausas)*100) : 0;
+                  return '<div class="dona-legend-item"><div class="dona-legend-dot" style="background:' + (CAUSA_COLORS[i]||"#6366f1") + '"></div><span class="dona-legend-name">' + (c.motivo_rechazo||'—').substring(0,20) + '</span><span class="dona-legend-val">' + c.cantidad + ' &nbsp;' + p2 + '%</span></div>';
+                }).join('') +
+              '</div>' +
+            '</div></div>' +
+        '</div>' +
+        '<div class="facturas-grid">' +
+          '<div class="card"><div class="card-header"><div><div class="card-title">Monto de facturas procesadas exitosamente - 30 días</div></div></div>' +
+            '<div class="factura-total">$' + Number(m.exitosas||0).toLocaleString('es-MX') + ' MXN</div><div class="card-subtitle" style="margin-bottom:0.75rem">Top 5 facturas exitosas</div>' +
+            facturaRows(topEx, '#3b82f6') +
+          '</div>' +
+          '<div class="card"><div class="card-header"><div><div class="card-title">Monto de facturas procesadas de manera fallida - 30 días</div></div></div>' +
+            '<div class="factura-total" style="color:#f87171">$' + Number(m.fallidas||0).toLocaleString('es-MX') + ' MXN</div><div class="card-subtitle" style="margin-bottom:0.75rem">Top 5 facturas fallidas</div>' +
+            facturaRows(topFa, '#ef4444') +
+          '</div>' +
+        '</div>' +
+        '<div class="card" style="margin-bottom:1rem"><div class="card-header"><div><div class="card-title">Expedientes Recientes</div><div class="card-subtitle">Últimos 10 registros</div></div><a href="/seguimiento.html" class="btn btn-outline" style="font-size:0.78rem;padding:0.3rem 0.7rem">Ver todos →</a></div><div id="tablaWrap"></div></div>';
+
+      setTimeout(() => { const f = document.getElementById('tasaFill'); if (f) f.style.width = tasa + '%'; }, 100);
+      renderDonut(aprobados, rechazados, revision, Math.max(0, total - aprobados - rechazados - revision));
+      renderCausas(kpis.causas_rechazo || []);
+      renderTendencia(kpis.tendencia || []);
+      renderDonaResultado(v.exitosas||0, v.rechazadas||0);
+      renderDonaCausas(causasTop5);
+      renderSparklines(spark);
+      renderTabla(exp.expedientes || []);
+    }
+
+    function renderDonut(ap, re, rv, ot) {
+      destroyChart('donut');
+      charts['donut'] = new Chart(document.getElementById('chartDonut'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Aprobados','Rechazados','Revisión','Otros'],
+          datasets: [{ data: [ap,re,rv,ot], backgroundColor: ['#10b981','#ef4444','#f59e0b','#475569'], borderColor: '#161b27', borderWidth: 3 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, cutout: '65%',
+          plugins: { legend: { position: 'bottom', labels: { color: DARK.legend, font: { size: 11 }, padding: 12 } } }
+        }
+      });
+    }
+
+    function renderCausas(causas) {
+      destroyChart('causas');
+      if (!causas.length) return;
+      charts['causas'] = new Chart(document.getElementById('chartCausas'), {
+        type: 'bar',
+        data: {
+          labels: causas.map(c => c.motivo_rechazo),
+          datasets: [{ label: 'Casos', data: causas.map(c => c.cantidad), backgroundColor: ['#ef4444','#f97316','#f59e0b','#84cc16','#06b6d4','#8b5cf6','#ec4899'], borderRadius: 5 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: DARK.grid }, ticks: { color: DARK.text } },
+            y: { grid: { display: false }, ticks: { color: DARK.text, font: { size: 11 } } }
+          }
+        }
+      });
+    }
+
+    function renderTendencia(tendencia) {
+      destroyChart('tendencia');
+      const data = [...tendencia].reverse();
+      charts['tendencia'] = new Chart(document.getElementById('chartTendencia'), {
+        type: 'line',
+        data: {
+          labels: data.map(t => t.dia),
+          datasets: [
+            { label: 'Aprobados', data: data.map(t => t.aprobados), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', tension: 0.4, fill: true, pointRadius: 3 },
+            { label: 'Rechazados', data: data.map(t => t.rechazados), borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', tension: 0.4, fill: true, pointRadius: 3 }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { color: DARK.legend, font: { size: 11 } } } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: DARK.text, font: { size: 10 }, maxTicksLimit: 8 } },
+            y: { grid: { color: DARK.grid }, ticks: { color: DARK.text }, beginAtZero: true }
+          }
+        }
+      });
+      renderSparklines();
+    }
+
+    function sparkline(id, datasets) {
+      destroyChart(id);
+      const el = document.getElementById(id);
+      if (!el) return;
+      charts[id] = new Chart(el, {
+        type: 'line',
+        data: { labels: Array(12).fill(''), datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false, animation: false,
+          plugins: { legend: { display: false }, tooltip: { enabled: false } },
+          scales: { x: { display: false }, y: { display: false } },
+          elements: { point: { radius: 0 } }
+        }
+      });
+    }
+
+    function renderDonaResultado(exitosas, rechazadas) {
+      destroyChart('donaResultado');
+      charts['donaResultado'] = new Chart(document.getElementById('donaResultado'), {
+        type: 'doughnut',
+        data: { labels: ['Exitosas','Rechazadas'], datasets: [{ data: [exitosas, rechazadas], backgroundColor: ['#10b981','#ef4444'], borderColor: '#161b27', borderWidth: 3 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '72%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + ctx.label + ': ' + ctx.raw } } } }
+      });
+    }
+
+    function renderDonaCausas(causas) {
+      destroyChart('donaCausas');
+      if (!causas.length) return;
+      charts['donaCausas'] = new Chart(document.getElementById('donaCausas'), {
+        type: 'doughnut',
+        data: {
+          labels: causas.slice(0,5).map(c => (c.motivo_rechazo||'').substring(0,20)),
+          datasets: [{ data: causas.slice(0,5).map(c => c.cantidad), backgroundColor: ['#ef4444','#f59e0b','#fbbf24','#facc15','#3b82f6'], borderColor: '#161b27', borderWidth: 3 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '72%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + ctx.label + ': ' + ctx.raw } } } }
+      });
+    }
+
+    function renderSparklines(spark) {
+      spark = spark || [];
+      sparkline('sparkTiempo', [{ data: spark.map(d => d.tiempo_prom), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', tension: 0.4, fill: true, borderWidth: 2 }]);
+      sparkline('sparkVolumen', [
+        { data: spark.map(d => d.exitosas), borderColor: '#10b981', tension: 0.4, fill: false, borderWidth: 2 },
+        { data: spark.map(d => d.rechazadas), borderColor: '#ef4444', tension: 0.4, fill: false, borderWidth: 2 }
+      ]);
+      sparkline('sparkMonto', [
+        { data: spark.map(d => d.monto_ex), borderColor: '#10b981', tension: 0.4, fill: false, borderWidth: 2 },
+        { data: spark.map(d => d.monto_fa), borderColor: '#ef4444', tension: 0.4, fill: false, borderWidth: 2 }
+      ]);
+    }
+
+    function renderTabla(expedientes) {
+      const wrap = document.getElementById('tablaWrap');
+      if (!expedientes.length) {
+        wrap.innerHTML = '<p style="padding:1rem;color:#475569;font-size:0.875rem">No hay expedientes registrados aún.</p>';
+        return;
+      }
+      let rows = expedientes.map(e =>
+        '<tr>' +
+          '<td><code style="font-size:0.78rem;color:#818cf8">' + (e.folio||'—') + '</code></td>' +
+          '<td>' + (e.nombre_cliente||'—') + '</td>' +
+          '<td>' + fmtMoney(e.monto_facturado) + '</td>' +
+          '<td>' + (e.moneda||'—') + '</td>' +
+          '<td><span class="badge ' + (e.resultado||e.status) + '">' + (e.resultado||e.status||'—') + '</span></td>' +
+          '<td style="color:#475569;font-size:0.78rem">' + (e.motivo_rechazo||'—') + '</td>' +
+          '<td style="color:#475569;font-size:0.78rem">' + (e.fecha ? new Date(e.fecha).toLocaleDateString('es-MX') : '—') + '</td>' +
+        '</tr>'
+      ).join('');
+      wrap.innerHTML = '<div style="overflow-x:auto"><table><thead><tr><th>Folio</th><th>Cliente</th><th>Monto</th><th>Moneda</th><th>Estado</th><th>Motivo</th><th>Fecha</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+    }
+
+    cargarDatos();
+    setInterval(cargarDatos, 30000);
+  </script>
+</body>
+</html>

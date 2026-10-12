@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: importacion-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: importacion_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+    networks:
+      - importacion
+
+  app:
+    build: .
+    image: importacion-app
+    container_name: importacion-app
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: importacion_db
+      N8N_URL: http://creditoflow-n8n:5678
+      PORT: 3000
+    ports:
+      - "8015:3000"
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      - postgres
+    networks:
+      - importacion
+
+volumes:
+  postgres_data:
+  uploads_data:
+
+networks:
+  importacion:
+    driver: bridge
