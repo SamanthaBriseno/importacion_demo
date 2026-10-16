@@ -566,6 +566,46 @@ function buildFiltroFecha(periodo, desde, hasta) {
   return { where: '', whereClause: '', params: [] };
 }
 
+// --- Resolver expediente en revisión manual ---
+app.patch('/api/importacion/expedientes/:folio/resolver', async (req, res) => {
+  try {
+    const { folio } = req.params;
+    const { decision, motivo } = req.body; // decision: 'aprobado' | 'rechazado'
+
+    if (!['aprobado', 'rechazado'].includes(decision)) {
+      return res.status(400).json({ error: 'Decisión inválida' });
+    }
+
+    const { rowCount } = await pool.query(
+      `UPDATE expedientes_importacion
+       SET resultado = $1, status = $1, motivo_rechazo = $2, fecha_actualizacion = NOW()
+       WHERE folio = $3 AND resultado = 'revision_manual'`,
+      [decision, motivo || null, folio]
+    );
+
+    if (rowCount === 0) return res.status(404).json({ error: 'Expediente no encontrado o ya resuelto' });
+    res.json({ success: true, folio, decision });
+  } catch (error) {
+    console.error('Error resolviendo expediente:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// --- Listar expedientes en revisión manual ---
+app.get('/api/importacion/revision-manual', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT folio, nombre_cliente, rfc_cliente, monto_facturado, moneda, motivo_rechazo, fecha_creacion
+       FROM expedientes_importacion
+       WHERE resultado = 'revision_manual'
+       ORDER BY fecha_creacion DESC`
+    );
+    res.json({ expedientes: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // --- Limpiar registros de demo ---
 app.delete('/api/configuracion/limpiar-demo', async (req, res) => {
   try {

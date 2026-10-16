@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Revisión Manual — Importación</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; }
+    nav {
+      background: #0a0c12; border-bottom: 1px solid #1e2535;
+      padding: 0 2rem; display: flex; align-items: center;
+      justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100;
+    }
+    .nav-brand { color: #e2e8f0; font-weight: 700; font-size: 1rem; text-decoration: none; }
+    .nav-links { display: flex; gap: 0.5rem; }
+    .nav-links a {
+      color: #94a3b8; text-decoration: none; padding: 0.4rem 0.9rem;
+      border-radius: 6px; font-size: 0.875rem; font-weight: 500; transition: background 0.2s, color 0.2s;
+    }
+    .nav-links a:hover { background: #1e2535; color: #e2e8f0; }
+    .nav-links a.active { background: #4f46e5; color: #fff; }
+
+    .page { padding: 2rem; max-width: 900px; margin: 0 auto; }
+    .page-header { margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+    .page-header h1 { font-size: 1.5rem; color: #f1f5f9; }
+    .badge-count {
+      background: #2d1f00; color: #fbbf24; border: 1px solid #78350f;
+      border-radius: 999px; padding: 0.25rem 0.75rem; font-size: 0.8rem; font-weight: 700;
+    }
+
+    .empty {
+      text-align: center; padding: 4rem 2rem; color: #475569;
+      background: #161b27; border: 1px solid #1e2535; border-radius: 12px;
+    }
+    .empty .icon { font-size: 3rem; margin-bottom: 1rem; }
+
+    .card {
+      background: #161b27; border: 1px solid #1e2535; border-radius: 12px;
+      padding: 1.25rem 1.5rem; margin-bottom: 1rem;
+    }
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+    .folio { font-family: monospace; color: #818cf8; font-size: 1rem; font-weight: 700; }
+    .fecha { font-size: 0.78rem; color: #475569; margin-top: 0.2rem; }
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.5rem 1.5rem; margin-bottom: 1rem; }
+    .info-item label { font-size: 0.72rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.15rem; }
+    .info-item span { font-size: 0.9rem; color: #e2e8f0; font-weight: 600; }
+    .motivo-box {
+      background: #2d1f00; border: 1px solid #78350f; border-radius: 8px;
+      padding: 0.6rem 0.9rem; font-size: 0.83rem; color: #fbbf24; margin-bottom: 1rem;
+    }
+
+    .actions { display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; }
+    .actions input {
+      flex: 1; min-width: 200px; padding: 0.55rem 0.8rem;
+      background: #0f1117; border: 1px solid #2a3347; border-radius: 8px;
+      color: #e2e8f0; font-size: 0.875rem;
+    }
+    .actions input::placeholder { color: #475569; }
+    .actions input:focus { outline: none; border-color: #4f46e5; }
+    .btn { padding: 0.55rem 1.2rem; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; font-size: 0.875rem; transition: background 0.2s, opacity 0.2s; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-approve { background: #166534; color: #4ade80; }
+    .btn-approve:hover:not(:disabled) { background: #15803d; }
+    .btn-reject  { background: #7f1d1d; color: #f87171; }
+    .btn-reject:hover:not(:disabled)  { background: #991b1b; }
+
+    .toast {
+      position: fixed; bottom: 1.5rem; right: 1.5rem;
+      padding: 0.75rem 1.25rem; border-radius: 10px; font-size: 0.875rem; font-weight: 600;
+      opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999;
+    }
+    .toast.show { opacity: 1; }
+    .toast.success { background: #052e16; color: #4ade80; border: 1px solid #166534; }
+    .toast.error   { background: #2d0a0a; color: #f87171; border: 1px solid #7f1d1d; }
+
+    .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid #1e2535; border-top-color: #fbbf24; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <nav>
+    <a class="nav-brand" href="/index.html">📦 Portal Importación</a>
+    <div class="nav-links">
+      <a href="/index.html">📋 Formulario</a>
+      <a href="/dashboard.html">📊 Dashboard</a>
+      <a href="/recomendaciones.html">💡 Recomendaciones</a>
+      <a href="/seguimiento.html">🔍 Seguimiento</a>
+      <a href="/revision.html" class="active">👁️ Revisión Manual</a>
+      <a href="/configuracion.html">⚙️ Configuración</a>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="page-header">
+      <h1>👁️ Revisión Manual</h1>
+      <span class="badge-count" id="contador">Cargando...</span>
+    </div>
+    <div id="lista"><div class="spinner"></div></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    let expedientes = [];
+
+    async function cargar() {
+      const res = await fetch('/api/importacion/revision-manual');
+      const data = await res.json();
+      expedientes = data.expedientes || [];
+      document.getElementById('contador').textContent = expedientes.length + ' pendiente(s)';
+      renderLista();
+    }
+
+    function renderLista() {
+      const lista = document.getElementById('lista');
+      if (!expedientes.length) {
+        lista.innerHTML = '<div class="empty"><div class="icon">✅</div><p>No hay expedientes pendientes de revisión.</p></div>';
+        return;
+      }
+      lista.innerHTML = expedientes.map(e => `
+        <div class="card" id="card-${e.folio}">
+          <div class="card-top">
+            <div>
+              <div class="folio">${e.folio}</div>
+              <div class="fecha">${new Date(e.fecha_creacion).toLocaleString('es-MX')}</div>
+            </div>
+          </div>
+          <div class="info-grid">
+            <div class="info-item"><label>Cliente</label><span>${e.nombre_cliente || '—'}</span></div>
+            <div class="info-item"><label>RFC</label><span>${e.rfc_cliente || '—'}</span></div>
+            <div class="info-item"><label>Monto</label><span>$${Number(e.monto_facturado || 0).toLocaleString('es-MX')} ${e.moneda || 'MXN'}</span></div>
+          </div>
+          ${e.motivo_rechazo ? `<div class="motivo-box">⚠️ ${e.motivo_rechazo}</div>` : ''}
+          <div class="actions">
+            <input type="text" id="motivo-${e.folio}" placeholder="Motivo (opcional para aprobado, recomendado para rechazo)">
+            <button class="btn btn-approve" onclick="resolver('${e.folio}', 'aprobado')">✅ Aprobar</button>
+            <button class="btn btn-reject"  onclick="resolver('${e.folio}', 'rechazado')">❌ Rechazar</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function resolver(folio, decision) {
+      const motivo = document.getElementById('motivo-' + folio).value.trim();
+      if (decision === 'rechazado' && !motivo) {
+        if (!confirm('¿Rechazar sin especificar motivo?')) return;
+      }
+
+      const card = document.getElementById('card-' + folio);
+      card.querySelectorAll('button').forEach(b => b.disabled = true);
+
+      try {
+        const res = await fetch('/api/importacion/expedientes/' + folio + '/resolver', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ decision, motivo })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        card.style.opacity = '0.4';
+        card.style.pointerEvents = 'none';
+        expedientes = expedientes.filter(e => e.folio !== folio);
+        document.getElementById('contador').textContent = expedientes.length + ' pendiente(s)';
+        showToast(decision === 'aprobado' ? '✅ Expediente aprobado' : '❌ Expediente rechazado', decision === 'aprobado' ? 'success' : 'error');
+        setTimeout(() => { card.remove(); if (!expedientes.length) renderLista(); }, 600);
+      } catch (err) {
+        showToast('❌ Error: ' + err.message, 'error');
+        card.querySelectorAll('button').forEach(b => b.disabled = false);
+      }
+    }
+
+    function showToast(msg, type) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast ' + type + ' show';
+      setTimeout(() => t.className = 'toast', 3000);
+    }
+
+    cargar();
+  </script>
+</body>
+</html>
