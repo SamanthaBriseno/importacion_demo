@@ -569,8 +569,8 @@ function buildFiltroFecha(periodo, desde, hasta) {
 // --- Limpiar registros de demo ---
 app.delete('/api/configuracion/limpiar-demo', async (req, res) => {
   try {
-    await pool.query("DELETE FROM resultados_importacion WHERE folio LIKE 'DEMO-%'");
-    const { rowCount } = await pool.query("DELETE FROM expedientes_importacion WHERE folio LIKE 'DEMO-%'");
+    await pool.query("DELETE FROM resultados_importacion WHERE folio NOT LIKE 'IMP-2025-%'");
+    const { rowCount } = await pool.query("DELETE FROM expedientes_importacion WHERE folio NOT LIKE 'IMP-2025-%'");
     res.json({ success: true, eliminados: rowCount });
   } catch (error) {
     console.error('Error limpiando demo:', error);

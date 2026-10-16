@@ -77,11 +77,11 @@
     <div class="card">
       <div class="card-title">🧹 Limpiar datos de demostración</div>
       <div class="card-desc">
-        Elimina todos los expedientes y resultados cuyos folios comienzan con <code style="color:#818cf8;background:#1e2535;padding:0.1rem 0.4rem;border-radius:4px">DEMO-</code>.
-        Esto permite reutilizar los mismos ejemplos de demostración sin afectar los datos de prueba existentes.
+        Elimina todos los expedientes y resultados cuyos folios <strong>no</strong> comienzan con <code style="color:#818cf8;background:#1e2535;padding:0.1rem 0.4rem;border-radius:4px">IMP-2025-</code>.
+        Esto borra los registros generados por el flujo de demostración, conservando únicamente los datos de prueba manuales.
       </div>
       <div class="warning-box">
-        ⚠️ Esta acción es irreversible. Solo se borrarán registros con folio <strong>DEMO-*</strong>.
+        ⚠️ Esta acción es irreversible. Solo se conservarán registros con folio <strong>IMP-2025-*</strong>.
       </div>
       <button class="btn-danger" id="btnLimpiar" onclick="limpiarDemo()">
         🗑️ Borrar registros DEMO
